@@ -253,6 +253,14 @@ const STATIONS = [
     group: 'Service public'
   },
   {
+    name: 'FIP Rock', abbr: 'rock',
+    desc: 'FIP · sélection rock',
+    tag: 'Musique', tagClass: '',
+    urls: ['https://icecast.radiofrance.fr/fiprock-hifi.aac?id=radiofrance'],
+    logo: 'icons/logos/fip-rock.svg',
+    group: 'Musique'
+  },
+  {
     name: 'RFI Monde', abbr: 'RFI',
     desc: 'International · géopolitique · Afrique',
     tag: 'Monde', tagClass: '',
@@ -264,11 +272,37 @@ const STATIONS = [
     group: 'Service public'
   },
   {
+    name: 'FIP Métal', abbr: 'métal',
+    desc: 'FIP · sélection métal',
+    tag: 'Musique', tagClass: '',
+    urls: ['https://icecast.radiofrance.fr/fipmetal-midfi.mp3'],
+    logo: 'icons/logos/fip-metal.svg',
+    group: 'Musique'
+  },
+  {
     name: 'Sud Radio', abbr: 'SR',
     desc: 'Généraliste · sport · rugby',
     tag: 'Rugby', tagClass: 'sport',
     urls: ['https://live.sudradio.fr/sudradio-mp3-128'],
     logo: 'icons/logos/sud-radio.svg',
+    group: 'Autres'
+  },
+  {
+    name: 'Ici Occitanie', abbr: 'Occ.',
+    desc: 'Actualité régionale · Toulouse',
+    tag: 'Région', tagClass: '',
+    // NOTE: URL unverified — Radio France renamed France Bleu → Ici network-wide in 2025.
+    // If this doesn't play, check browser dev tools (Network tab) on radiofrance.fr for the real stream URL.
+    urls: ['https://icecast.radiofrance.fr/icioccitanie-hifi.aac?id=radiofrance'],
+    logo: 'icons/logos/ici-occitanie.svg',
+    group: 'Autres'
+  },
+  {
+    name: 'Radio Nova', abbr: 'Nova',
+    desc: 'Éclectique · découvertes musicales',
+    tag: 'Musique', tagClass: '',
+    urls: ['http://radionova.ice.infomaniak.ch/radionova-256.aac'],
+    logo: 'icons/logos/radio-nova.svg',
     group: 'Autres'
   }
 ];
