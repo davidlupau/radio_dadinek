@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1a6eb5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Radio">
+  <meta name="description" content="Radios françaises en direct">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <title>Radio</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-dark:   #0f4a87;
+      --blue:        #1a6eb5;
+      --blue-mid:    #2182d4;
+      --blue-pale:   #deeef9;
+      --blue-wash:   #f0f7fd;
+      --bg:          #f5f9fe;
+      --surface:     #ffffff;
+      --border:      #c8dff2;
+      --text:        #0d2b48;
+      --text-mid:    #2e5f8a;
+      --text-soft:   #5a8ab0;
+      --text-muted:  #8db4d4;
+      --live:        #16a34a;
+      --warn:        #d97706;
+      --safe-b:      env(safe-area-inset-bottom, 0px);
+      --safe-t:      env(safe-area-inset-top, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Source Sans 3', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      background: var(--blue);
+      padding: calc(var(--safe-t) + 20px) 20px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .header-title {
+      font-family: 'Lora', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: white;
+    }
+    .header-title span { font-weight: 400; font-style: italic; opacity: 0.85; font-size: 18px; }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 99px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      letter-spacing: 0.05em;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .live-badge.show { opacity: 1; }
+    .live-badge.loading { background: rgba(217,119,6,0.3); border-color: rgba(217,119,6,0.5); }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; animation: pulse 1.5s ease-in-out infinite; }
+    .live-badge.loading .live-dot { background: #fbbf24; animation: none; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* Now Playing */
+    .now-playing {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 20px 16px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(26,110,181,0.08);
+    }
+    .np-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-soft); margin-bottom: 6px;
+    }
+    .np-name {
+      font-family: 'Lora', serif; font-size: 28px; font-weight: 500;
+      color: var(--text); line-height: 1.1; min-height: 32px;
+    }
+    .np-name.idle { font-style: italic; color: var(--text-muted); font-size: 22px; }
+    .np-desc { font-size: 14px; color: var(--text-soft); margin-top: 4px; min-height: 18px; }
+
+    .controls { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+
+    .play-btn {
+      width: 56px; height: 56px; border-radius: 50%; border: none;
+      background: var(--blue); color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; box-shadow: 0 4px 12px rgba(26,110,181,0.35);
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .play-btn:active { transform: scale(0.93); }
+    .play-btn svg { width: 24px; height: 24px; fill: white; }
+
+    .vol-wrap { flex: 1; display: flex; align-items: center; gap: 10px; }
+    .vol-icon { color: var(--text-soft); flex-shrink: 0; }
+    .vol-icon svg { width: 18px; height: 18px; fill: currentColor; display: block; }
+
+    input[type=range] {
+      flex: 1; -webkit-appearance: none; appearance: none;
+      height: 4px; background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--blue); cursor: pointer; box-shadow: 0 1px 4px rgba(26,110,181,0.4);
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 18px; height: 18px; border-radius: 50%; background: var(--blue); border: none; cursor: pointer;
+    }
+
+    /* Station list */
+    .station-list { flex: 1; overflow-y: auto; padding-bottom: calc(12px + var(--safe-b)); }
+
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-soft);
+      padding: 18px 20px 8px; background: var(--bg);
+    }
+
+    .station {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 20px; cursor: pointer;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      transition: background 0.12s; -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    .station:active { background: var(--blue-wash); }
+    .station.active { background: var(--blue-wash); }
+    .station.active::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: var(--blue); border-radius: 0 3px 3px 0;
+    }
+
+    .station-logo {
+      width: 48px; height: 48px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--blue-pale);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden;
+    }
+    .station-logo img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+    .station-logo .fallback {
+      font-family: 'Lora', serif; font-size: 11px; font-weight: 700;
+      color: var(--blue); text-align: center; line-height: 1.2; padding: 4px;
+    }
+
+    .station-info { flex: 1; min-width: 0; }
+    .station-name { font-size: 17px; font-weight: 500; color: var(--text); }
+    .station.active .station-name { color: var(--blue-dark); font-weight: 600; }
+    .station-desc { font-size: 13px; color: var(--text-soft); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .station-tag {
+      font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px;
+      letter-spacing: 0.04em; flex-shrink: 0;
+      background: #e8f4ff; color: var(--blue); border: 1px solid var(--border);
+    }
+    .station-tag.sport { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: calc(16px + var(--safe-b));
+      left: 50%; transform: translateX(-50%);
+      background: #7f1d1d; color: #fca5a5;
+      font-size: 13px; font-weight: 500; padding: 10px 18px;
+      border-radius: 10px; white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-title">Radio <span>lupau</span></div>
+    <div class="live-badge" id="liveBadge">
+      <div class="live-dot" id="liveDot"></div>
+      <span id="liveLabel">EN DIRECT</span>
+    </div>
+  </div>
+
+  <div class="now-playing">
+    <div class="np-label">En cours d'écoute</div>
+    <div class="np-name idle" id="npName">Choisissez une station</div>
+    <div class="np-desc" id="npDesc"></div>
+    <div class="controls">
+      <button class="play-btn" id="playBtn" aria-label="Lecture / Pause" onclick="togglePlay()">
+        <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <div class="vol-wrap">
+        <span class="vol-icon"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></span>
+        <input type="range" min="0" max="1" step="0.05" value="0.8" id="vol" oninput="setVol(this.value)" aria-label="Volume">
+      </div>
+    </div>
+  </div>
+
+  <div class="station-list" id="stationList"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const STATIONS = [
+  {
+    name: 'France Info', abbr: 'info',
+    desc: 'Actualité en continu · flash info',
+    tag: 'Info', tagClass: '',
+    urls: ['https://icecast.radiofrance.fr/franceinfo-hifi.aac?id=radiofrance'],
+    logo: 'icons/logos/france-info.svg',
+    group: 'Service public'
+  },
+  {
+    name: 'France Inter', abbr: 'inter',
+    desc: 'Généraliste · interviews · société',
+    tag: 'Débat', tagClass: '',
+    urls: ['https://icecast.radiofrance.fr/franceinter-hifi.aac?id=radiofrance'],
+    logo: 'icons/logos/france-inter.svg',
+    group: 'Service public'
+  },
+  {
+    name: 'France Culture', abbr: 'cult.',
+    desc: 'Débats · philosophie · sciences sociales',
+    tag: 'Analyse', tagClass: '',
+    urls: ['https://icecast.radiofrance.fr/franceculture-hifi.aac?id=radiofrance'],
+    logo: 'icons/logos/france-culture.svg',
+    group: 'Service public'
+  },
+  {
+    name: 'RFI Monde', abbr: 'RFI',
+    desc: 'International · géopolitique · Afrique',
+    tag: 'Monde', tagClass: '',
+    urls: [
+      'https://rfimonde-96k.ice.infomaniak.ch/rfimonde-96k.mp3',
+      'http://live02.rfi.fr/rfimonde-96k.mp3'
+    ],
+    logo: 'icons/logos/rfi.svg',
+    group: 'Service public'
+  },
+  {
+    name: 'Sud Radio', abbr: 'SR',
+    desc: 'Généraliste · sport · rugby',
+    tag: 'Rugby', tagClass: 'sport',
+    urls: ['https://live.sudradio.fr/sudradio-mp3-128'],
+    logo: 'icons/logos/sud-radio.svg',
+    group: 'Autres'
+  }
+];
+
+let audio = null;
+let currentIdx = -1;
+let currentUrlIdx = 0;
+let playing = false;
+
+// Build list
+const list = document.getElementById('stationList');
+let lastGroup = null;
+STATIONS.forEach((s, i) => {
+  if (s.group !== lastGroup) {
+    const lbl = document.createElement('div');
+    lbl.className = 'section-label';
+    lbl.textContent = s.group;
+    list.appendChild(lbl);
+    lastGroup = s.group;
+  }
+  const el = document.createElement('div');
+  el.className = 'station';
+  el.id = 'st-' + i;
+  el.onclick = () => selectStation(i);
+  el.innerHTML = `
+    <div class="station-logo">
+      <img src="${s.logo}" alt="${s.name}"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="fallback" style="display:none">${s.abbr}</div>
+    </div>
+    <div class="station-info">
+      <div class="station-name">${s.name}</div>
+      <div class="station-desc">${s.desc}</div>
+    </div>
+    <span class="station-tag ${s.tagClass}">${s.tag}</span>
+  `;
+  list.appendChild(el);
+});
+
+function selectStation(idx, urlIdx) {
+  urlIdx = urlIdx || 0;
+  currentUrlIdx = urlIdx;
+
+  // Clean up old audio completely before touching the DOM
+  if (audio) {
+    audio.onplaying = null;
+    audio.onwaiting = null;
+    audio.onpause   = null;
+    audio.onerror   = null;
+    audio.pause();
+    audio.src = '';
+  }
+
+  document.querySelectorAll('.station').forEach((el, i) => el.classList.toggle('active', i === idx));
+
+  const s = STATIONS[idx];
+  document.getElementById('npName').textContent = s.name;
+  document.getElementById('npName').classList.remove('idle');
+  document.getElementById('npDesc').textContent = s.desc;
+  currentIdx = idx;
+
+  audio = new Audio();
+  audio.volume = parseFloat(document.getElementById('vol').value);
+  audio.src = s.urls[urlIdx];
+
+  audio.onplaying = () => { setState('live'); playing = true; };
+  audio.onwaiting = () => setState('loading');
+  audio.onpause   = () => { if (playing) { setState('idle'); playing = false; setIcon(false); } };
+  audio.onerror   = () => {
+    playing = false;
+    setIcon(false);
+    // Try next fallback URL if available
+    const nextUrl = urlIdx + 1;
+    if (nextUrl < s.urls.length) {
+      console.log('Trying fallback URL for ' + s.name);
+      selectStation(idx, nextUrl);
+    } else {
+      setState('idle');
+      showToast('Impossible de charger ' + s.name);
+    }
+  };
+
+  setState('loading');
+  audio.play()
+    .then(() => setIcon(true))
+    .catch(() => { setState('idle'); playing = false; setIcon(false); });
+}
+
+function togglePlay() {
+  if (currentIdx < 0) { selectStation(0); return; }
+  if (playing) {
+    audio.pause();
+    setIcon(false);
+  } else {
+    setState('loading');
+    audio.play().then(() => setIcon(true)).catch(() => setState('idle'));
+  }
+}
+
+function setVol(v) { if (audio) audio.volume = parseFloat(v); }
+
+function setIcon(p) {
+  document.getElementById('playIcon').innerHTML = p
+    ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+}
+
+function setState(state) {
+  const badge = document.getElementById('liveBadge');
+  const label = document.getElementById('liveLabel');
+  if (state === 'live') {
+    badge.className = 'live-badge show';
+    document.getElementById('liveDot').style.background = '#4ade80';
+    label.textContent = 'EN DIRECT';
+    setIcon(true);
+  } else if (state === 'loading') {
+    badge.className = 'live-badge show loading';
+    label.textContent = 'CONNEXION…';
+  } else {
+    badge.className = 'live-badge';
+  }
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
